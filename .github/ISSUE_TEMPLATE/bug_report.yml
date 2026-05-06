@@ -1,0 +1,56 @@
+name: Bug report
+description: Report a reproducible Mealie MCP Server problem
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: input
+    id: mealie-mcp-version
+    attributes:
+      label: Mealie MCP Server version
+      description: Commit, tag, image tag, or image digest.
+    validations:
+      required: true
+  - type: input
+    id: mealie-version
+    attributes:
+      label: Mealie version
+      placeholder: v3.16.0
+    validations:
+      required: true
+  - type: dropdown
+    id: transport
+    attributes:
+      label: Transport
+      options:
+        - streamable-http
+        - stdio
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the tool name and sanitized payload.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Paste sanitized logs or error responses. Do not include tokens.
+    validations:
+      required: true

@@ -1,0 +1,38 @@
+# Example for attaching Mealie MCP Server to an existing Mealie Docker network.
+#
+# Use this when Mealie already runs in Docker and is reachable by service name
+# on a shared network, for example MEALIE_BASE_URL=http://mealie:9000.
+
+services:
+  mealie-mcp:
+    image: ghcr.io/nikopol666/mealie-mcp:latest
+    container_name: mealie-mcp
+    restart: unless-stopped
+    ports:
+      - "${MCP_HTTP_PORT:-8080}:8080"
+    environment:
+      MEALIE_BASE_URL: ${MEALIE_BASE_URL:?Set MEALIE_BASE_URL in .env}
+      MEALIE_API_TOKEN: ${MEALIE_API_TOKEN:?Set MEALIE_API_TOKEN in .env}
+      MCP_SERVER_NAME: ${MCP_SERVER_NAME:-Mealie MCP Server}
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: 8080
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-30}
+      MAX_RETRIES: ${MAX_RETRIES:-3}
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import httpx; httpx.get('http://localhost:8080/health', timeout=5).raise_for_status()"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - mealie
+
+networks:
+  mealie:
+    external: true
+    name: ${MEALIE_DOCKER_NETWORK:-mealie_default}
