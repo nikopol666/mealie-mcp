@@ -1,5 +1,6 @@
 """Tests for meal plan Pydantic models and validation."""
 
+import asyncio
 import pytest
 from datetime import datetime, date, timedelta
 from pydantic import ValidationError
@@ -16,7 +17,35 @@ from src.tools.meal_plans import (
     _normalize_meal_plan_entry,
     _normalize_meal_plan_filters,
     _random_meal_plan_entry_to_api_data,
+    setup_meal_plan_tools,
 )
+
+
+class FakeMCP:
+    def __init__(self):
+        self.tools = {}
+
+    def tool(self):
+        def register(func):
+            self.tools[func.__name__] = func
+            return func
+
+        return register
+
+
+class FakeMealPlanClient:
+    async def get(self, endpoint, params=None):
+        if endpoint == "/api/households/mealplans/today":
+            return [{"id": "today-1", "entryType": "dinner"}]
+        if endpoint == "/api/households/mealplans":
+            return [{"id": "plan-1", "entryType": "lunch"}]
+        raise AssertionError(f"Unexpected endpoint: {endpoint}")
+
+
+def registered_tools(client=None):
+    mcp = FakeMCP()
+    setup_meal_plan_tools(mcp, lambda: client or FakeMealPlanClient())
+    return mcp.tools
 
 
 class TestMealPlanModels:
@@ -215,6 +244,16 @@ class TestMealPlanModels:
             "text": "",
             "recipeId": None,
         }
+
+    def test_get_todays_meal_plans_accepts_plain_list_response(self):
+        result = asyncio.run(registered_tools()["get_todays_meal_plans"]())
+
+        assert result == {"meal_plans": [{"id": "today-1", "entryType": "dinner"}]}
+
+    def test_list_meal_plans_accepts_plain_list_response(self):
+        result = asyncio.run(registered_tools()["list_meal_plans"]())
+
+        assert result == {"meal_plans": [{"id": "plan-1", "entryType": "lunch"}]}
 
 
 class TestEdgeCases:

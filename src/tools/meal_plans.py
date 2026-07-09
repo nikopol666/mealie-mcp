@@ -209,6 +209,15 @@ def _meal_plan_update_to_api_data(current: Dict[str, Any], entry: MealPlanEntry)
     }
 
 
+def _meal_plan_items(response: Any) -> List[Dict[str, Any]]:
+    if isinstance(response, list):
+        return response
+    if isinstance(response, dict):
+        items = response.get("items", [])
+        return items if isinstance(items, list) else []
+    return []
+
+
 def setup_meal_plan_tools(mcp_server, client_provider):
     """Setup meal planning tools with the main MCP server."""
     
@@ -229,7 +238,7 @@ def setup_meal_plan_tools(mcp_server, client_provider):
                     query_params["end_date"] = parsed_filters.end_date
 
             response = await client.get("/api/households/mealplans", query_params)
-            items = response.get("items", [])
+            items = _meal_plan_items(response)
 
             if filters:
                 parsed_filters = MealPlanFilters(**_normalize_meal_plan_filters(filters))
@@ -325,7 +334,7 @@ def setup_meal_plan_tools(mcp_server, client_provider):
                 return {"error": "Mealie client not initialized"}
 
             response = await client.get("/api/households/mealplans/today")
-            return {"meal_plans": response.get("items", response)}
+            return {"meal_plans": _meal_plan_items(response)}
         except Exception as e:
             logger.error(f"Get today's meal plans failed: {e}")
             return {"error": str(e)}
