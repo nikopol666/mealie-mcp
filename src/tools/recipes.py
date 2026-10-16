@@ -955,10 +955,16 @@ async def _async_upload_recipe_image(
         if len(image_bytes) > 15 * 1024 * 1024:
             return {"error": "Image is too large; maximum supported size is 15 MB"}
 
-        response = await client.upload_recipe_image(recipe_id, image_bytes, clean_extension)
+        # Mealie's recipe image endpoint resolves recipes by slug, while other
+        # recipe endpoints accept either a slug or UUID. Resolve the canonical
+        # slug first so callers can safely pass either form.
+        recipe = await client.get_recipe(recipe_id)
+        recipe_slug = recipe.get("slug") or recipe_id
+
+        response = await client.upload_recipe_image(recipe_slug, image_bytes, clean_extension)
         return {
             "image": response.get("image"),
-            "message": f"Recipe image uploaded successfully for {recipe_id}",
+            "message": f"Recipe image uploaded successfully for {recipe_slug}",
         }
     except MealieAPIError as e:
         if "not found" in str(e).lower():
