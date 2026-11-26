@@ -15,7 +15,7 @@ from enum import Enum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-from mealie_client import MealieClient, MealieAPIError
+from mealie_client import MealieClient, MealieAPIError, path_param
 
 logger = logging.getLogger(__name__)
 
@@ -266,7 +266,7 @@ def setup_meal_plan_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
             
-            meal_plan = await client.get(f"/api/households/mealplans/{meal_plan_id}")
+            meal_plan = await client.get(f"/api/households/mealplans/{path_param(meal_plan_id)}")
             return {"meal_plan": meal_plan}
         except Exception as e:
             logger.error(f"Get meal plan failed: {e}")
@@ -302,10 +302,10 @@ def setup_meal_plan_tools(mcp_server, client_provider):
             # Validate the entry data
             entry = MealPlanEntry(**_normalize_meal_plan_entry(entry_data))
 
-            current = await client.get(f"/api/households/mealplans/{meal_plan_id}")
+            current = await client.get(f"/api/households/mealplans/{path_param(meal_plan_id)}")
             api_data = _meal_plan_update_to_api_data(current, entry)
 
-            response = await client.put(f"/api/households/mealplans/{meal_plan_id}", api_data)
+            response = await client.put(f"/api/households/mealplans/{path_param(meal_plan_id)}", api_data)
             return {"meal_plan": response, "message": "Meal plan entry updated successfully"}
         except Exception as e:
             logger.error(f"Update meal plan entry failed: {e}")
@@ -319,7 +319,7 @@ def setup_meal_plan_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            await client.delete(f"/api/households/mealplans/{meal_plan_id}")
+            await client.delete(f"/api/households/mealplans/{path_param(meal_plan_id)}")
             return {"message": f"Meal plan entry {meal_plan_id} deleted successfully"}
         except Exception as e:
             logger.error(f"Delete meal plan entry failed: {e}")
@@ -385,7 +385,7 @@ def setup_meal_plan_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            response = await client.get(f"/api/households/mealplans/rules/{rule_id}")
+            response = await client.get(f"/api/households/mealplans/rules/{path_param(rule_id)}")
             return {"rule": response}
         except Exception as e:
             logger.error(f"Get meal plan rule failed: {e}")
@@ -431,7 +431,7 @@ def setup_meal_plan_tools(mcp_server, client_provider):
                 ),
             }
             rule = MealPlanRule(**data)
-            response = await client.put(f"/api/households/mealplans/rules/{rule_id}", _meal_plan_rule_to_api_data(rule))
+            response = await client.put(f"/api/households/mealplans/rules/{path_param(rule_id)}", _meal_plan_rule_to_api_data(rule))
             return {"rule": response, "message": "Meal plan rule updated successfully"}
         except Exception as e:
             logger.error(f"Update meal plan rule failed: {e}")
@@ -445,7 +445,7 @@ def setup_meal_plan_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            await client.delete(f"/api/households/mealplans/rules/{rule_id}")
+            await client.delete(f"/api/households/mealplans/rules/{path_param(rule_id)}")
             return {"message": f"Meal plan rule {rule_id} deleted successfully"}
         except Exception as e:
             logger.error(f"Delete meal plan rule failed: {e}")

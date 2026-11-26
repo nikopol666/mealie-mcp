@@ -5,7 +5,7 @@ import base64
 import httpx
 import logging
 from typing import Dict, Any, List, Optional, Union
-from urllib.parse import urljoin
+from urllib.parse import quote, unquote
 
 from config import settings
 
@@ -15,6 +15,19 @@ logger = logging.getLogger(__name__)
 class MealieAPIError(Exception):
     """Exception raised for Mealie API errors."""
     pass
+
+
+def path_param(value: Any) -> str:
+    """Escape one caller-supplied value for use as a single URL path segment.
+
+    Every identifier interpolated into an API path must go through this helper,
+    so values such as ``../admin`` or ``x?y`` cannot change which Mealie
+    endpoint is called.
+    """
+    text = str(value)
+    if text in ("", ".", ".."):
+        raise MealieAPIError(f"Invalid path parameter: {text!r}")
+    return quote(text, safe="")
 
 
 class MealieClient:
@@ -37,6 +50,14 @@ class MealieClient:
             limits=httpx.Limits(max_connections=10, max_keepalive_connections=5)
         )
     
+    def _build_url(self, endpoint: str) -> str:
+        """Build an absolute Mealie URL and reject dot-segment traversal."""
+        path = endpoint.lstrip("/")
+        for segment in path.split("?", 1)[0].split("/"):
+            if unquote(segment) in (".", ".."):
+                raise MealieAPIError(f"Refusing path with dot segment: {endpoint!r}")
+        return f"{self.base_url}/{path}"
+
     async def _request(
         self, 
         method: str, 
@@ -45,7 +66,7 @@ class MealieClient:
         params: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """Make HTTP request to Mealie API."""
-        url = urljoin(f"{self.base_url}/", endpoint.lstrip("/"))
+        url = self._build_url(endpoint)
         method_upper = method.upper()
         retryable_statuses = {502, 503, 504}
         attempts = max(1, settings.max_retries)
@@ -61,9 +82,17 @@ class MealieClient:
                 )
                 response.raise_for_status()
                 
-                if response.content:
+                if not response.content:
+                    return {}
+                try:
                     return response.json()
-                return {}
+                except ValueError:
+                    content_type = response.headers.get("content-type", "unknown")
+                    logger.error(f"Non-JSON response from {method_upper} {url} ({content_type})")
+                    raise MealieAPIError(
+                        f"Mealie returned a non-JSON response (HTTP {response.status_code}, "
+                        f"content-type {content_type}): {response.text[:200]}"
+                    )
                 
             except httpx.HTTPStatusError as e:
                 status_code = e.response.status_code
@@ -91,7 +120,7 @@ class MealieClient:
         params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Make a multipart/form-data request to Mealie."""
-        url = urljoin(f"{self.base_url}/", endpoint.lstrip("/"))
+        url = self._build_url(endpoint)
         headers = {
             "Authorization": f"Bearer {self.api_token}",
             "Accept": "application/json",
@@ -130,7 +159,7 @@ class MealieClient:
         params: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Return a non-JSON Mealie response as base64-safe MCP data."""
-        url = urljoin(f"{self.base_url}/", endpoint.lstrip("/"))
+        url = self._build_url(endpoint)
         headers = {
             "Authorization": f"Bearer {self.api_token}",
             "Accept": "*/*",
@@ -141,12 +170,17 @@ class MealieClient:
             response.raise_for_status()
             content_type = response.headers.get("content-type")
             if content_type and "application/json" in content_type and response.content:
-                return {
-                    "json": response.json(),
-                    "content_type": content_type,
-                    "content_disposition": response.headers.get("content-disposition"),
-                    "size": len(response.content),
-                }
+                try:
+                    parsed = response.json()
+                except ValueError:
+                    parsed = None
+                else:
+                    return {
+                        "json": parsed,
+                        "content_type": content_type,
+                        "content_disposition": response.headers.get("content-disposition"),
+                        "size": len(response.content),
+                    }
             return {
                 "content_base64": base64.b64encode(response.content).decode("ascii"),
                 "content_type": content_type,
@@ -227,7 +261,7 @@ class MealieClient:
     
     async def get_recipe(self, recipe_id: str) -> Dict[str, Any]:
         """Get a specific recipe by ID."""
-        return await self.get(f"/api/recipes/{recipe_id}")
+        return await self.get(f"/api/recipes/{path_param(recipe_id)}")
     
     async def create_recipe(self, recipe_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new recipe."""
@@ -235,11 +269,11 @@ class MealieClient:
     
     async def update_recipe(self, recipe_id: str, recipe_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update an existing recipe."""
-        return await self.put(f"/api/recipes/{recipe_id}", recipe_data)
+        return await self.put(f"/api/recipes/{path_param(recipe_id)}", recipe_data)
 
     async def upload_recipe_image(self, recipe_id: str, image_bytes: bytes, extension: str) -> Dict[str, Any]:
         """Upload or replace a recipe image."""
-        url = urljoin(f"{self.base_url}/", f"/api/recipes/{recipe_id}/image".lstrip("/"))
+        url = self._build_url(f"/api/recipes/{path_param(recipe_id)}/image")
         clean_extension = extension.lower().lstrip(".")
         media_type = "image/jpeg" if clean_extension in {"jpg", "jpeg"} else f"image/{clean_extension}"
         headers = {
@@ -264,9 +298,12 @@ class MealieClient:
                 )
             response.raise_for_status()
 
-            if response.content:
+            if not response.content:
+                return {}
+            try:
                 return response.json()
-            return {}
+            except ValueError:
+                return {"content": response.text}
         except httpx.HTTPStatusError as e:
             status_code = e.response.status_code
             logger.error(f"HTTP {status_code} error: {e.response.text}")
@@ -277,7 +314,7 @@ class MealieClient:
     
     async def delete_recipe(self, recipe_id: str) -> Dict[str, Any]:
         """Delete a recipe."""
-        return await self.delete(f"/api/recipes/{recipe_id}")
+        return await self.delete(f"/api/recipes/{path_param(recipe_id)}")
     
     async def import_recipe_from_url(self, url: str) -> Dict[str, Any]:
         """Import a recipe from a URL."""
@@ -299,11 +336,11 @@ class MealieClient:
     
     async def update_meal_plan_entry(self, meal_plan_id: str, meal_plan_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update a meal plan entry."""
-        return await self.put(f"/api/households/mealplans/{meal_plan_id}", meal_plan_data)
+        return await self.put(f"/api/households/mealplans/{path_param(meal_plan_id)}", meal_plan_data)
     
     async def delete_meal_plan_entry(self, meal_plan_id: str) -> Dict[str, Any]:
         """Delete a meal plan entry."""
-        return await self.delete(f"/api/households/mealplans/{meal_plan_id}")
+        return await self.delete(f"/api/households/mealplans/{path_param(meal_plan_id)}")
     
     # Shopping list operations
     async def get_shopping_lists(self) -> Dict[str, Any]:
@@ -317,15 +354,15 @@ class MealieClient:
     
     async def get_shopping_list(self, list_id: str) -> Dict[str, Any]:
         """Get a specific shopping list."""
-        return await self.get(f"/api/households/shopping/lists/{list_id}")
+        return await self.get(f"/api/households/shopping/lists/{path_param(list_id)}")
 
     async def update_shopping_list(self, list_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
         """Update a shopping list."""
-        return await self.put(f"/api/households/shopping/lists/{list_id}", data)
+        return await self.put(f"/api/households/shopping/lists/{path_param(list_id)}", data)
 
     async def delete_shopping_list(self, list_id: str) -> Dict[str, Any]:
         """Delete a shopping list."""
-        return await self.delete(f"/api/households/shopping/lists/{list_id}")
+        return await self.delete(f"/api/households/shopping/lists/{path_param(list_id)}")
 
     async def get_shopping_items(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Get all shopping list items."""
@@ -333,7 +370,7 @@ class MealieClient:
 
     async def get_shopping_item(self, item_id: str) -> Dict[str, Any]:
         """Get a specific shopping list item."""
-        return await self.get(f"/api/households/shopping/items/{item_id}")
+        return await self.get(f"/api/households/shopping/items/{path_param(item_id)}")
     
     async def add_shopping_item(self, list_id: str, item_data: Dict[str, Any]) -> Dict[str, Any]:
         """Add an item to a shopping list."""
@@ -345,11 +382,11 @@ class MealieClient:
         """Update a shopping list item."""
         payload = dict(item_data)
         payload.setdefault("shoppingListId", list_id)
-        return await self.put(f"/api/households/shopping/items/{item_id}", payload)
+        return await self.put(f"/api/households/shopping/items/{path_param(item_id)}", payload)
     
     async def delete_shopping_item(self, list_id: str, item_id: str) -> Dict[str, Any]:
         """Delete a shopping list item."""
-        return await self.delete(f"/api/households/shopping/items/{item_id}")
+        return await self.delete(f"/api/households/shopping/items/{path_param(item_id)}")
 
     async def create_shopping_items(self, items: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Create multiple shopping list items."""
@@ -370,11 +407,11 @@ class MealieClient:
         data: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Add a recipe's ingredients to a shopping list."""
-        return await self.post(f"/api/households/shopping/lists/{list_id}/recipe/{recipe_id}", data or {})
+        return await self.post(f"/api/households/shopping/lists/{path_param(list_id)}/recipe/{path_param(recipe_id)}", data or {})
 
     async def add_recipes_to_shopping_list(self, list_id: str, data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Add multiple recipes' ingredients to a shopping list."""
-        return await self.post(f"/api/households/shopping/lists/{list_id}/recipe", data)
+        return await self.post(f"/api/households/shopping/lists/{path_param(list_id)}/recipe", data)
 
     async def remove_recipe_from_shopping_list(
         self,
@@ -383,11 +420,11 @@ class MealieClient:
         data: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Remove a recipe's ingredients from a shopping list."""
-        return await self.post(f"/api/households/shopping/lists/{list_id}/recipe/{recipe_id}/delete", data or {})
+        return await self.post(f"/api/households/shopping/lists/{path_param(list_id)}/recipe/{path_param(recipe_id)}/delete", data or {})
 
     async def update_shopping_list_label_settings(self, list_id: str, data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Update shopping list label ordering/settings."""
-        return await self.put(f"/api/households/shopping/lists/{list_id}/label-settings", data)
+        return await self.put(f"/api/households/shopping/lists/{path_param(list_id)}/label-settings", data)
 
     # Foods operations
     async def get_foods(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -396,7 +433,7 @@ class MealieClient:
 
     async def get_food(self, food_id: str) -> Dict[str, Any]:
         """Get a specific food by ID."""
-        return await self.get(f"/api/foods/{food_id}")
+        return await self.get(f"/api/foods/{path_param(food_id)}")
 
     async def create_food(self, food_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new food."""
@@ -404,11 +441,11 @@ class MealieClient:
 
     async def update_food(self, food_id: str, food_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update an existing food."""
-        return await self.put(f"/api/foods/{food_id}", food_data)
+        return await self.put(f"/api/foods/{path_param(food_id)}", food_data)
 
     async def delete_food(self, food_id: str) -> Dict[str, Any]:
         """Delete a food."""
-        return await self.delete(f"/api/foods/{food_id}")
+        return await self.delete(f"/api/foods/{path_param(food_id)}")
 
     async def search_foods(self, query: str, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
         """Search for foods."""
@@ -434,7 +471,7 @@ class MealieClient:
 
     async def get_unit(self, unit_id: str) -> Dict[str, Any]:
         """Get a specific unit by ID."""
-        return await self.get(f"/api/units/{unit_id}")
+        return await self.get(f"/api/units/{path_param(unit_id)}")
 
     async def create_unit(self, unit_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new unit."""
@@ -442,11 +479,11 @@ class MealieClient:
 
     async def update_unit(self, unit_id: str, unit_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update an existing unit."""
-        return await self.put(f"/api/units/{unit_id}", unit_data)
+        return await self.put(f"/api/units/{path_param(unit_id)}", unit_data)
 
     async def delete_unit(self, unit_id: str) -> Dict[str, Any]:
         """Delete a unit."""
-        return await self.delete(f"/api/units/{unit_id}")
+        return await self.delete(f"/api/units/{path_param(unit_id)}")
 
     async def merge_units(self, from_unit_id: str, to_unit_id: str) -> Dict[str, Any]:
         """Merge one unit into another."""
@@ -463,7 +500,7 @@ class MealieClient:
 
     async def get_tag(self, tag_id: str) -> Dict[str, Any]:
         """Get a specific tag by ID."""
-        return await self.get(f"/api/organizers/tags/{tag_id}")
+        return await self.get(f"/api/organizers/tags/{path_param(tag_id)}")
 
     async def create_tag(self, tag_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new tag."""
@@ -471,11 +508,11 @@ class MealieClient:
 
     async def update_tag(self, tag_id: str, tag_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update an existing tag."""
-        return await self.put(f"/api/organizers/tags/{tag_id}", tag_data)
+        return await self.put(f"/api/organizers/tags/{path_param(tag_id)}", tag_data)
 
     async def delete_tag(self, tag_id: str) -> Dict[str, Any]:
         """Delete a tag."""
-        return await self.delete(f"/api/organizers/tags/{tag_id}")
+        return await self.delete(f"/api/organizers/tags/{path_param(tag_id)}")
 
     # Categories operations
     async def get_categories(self, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -484,7 +521,7 @@ class MealieClient:
 
     async def get_category(self, category_id: str) -> Dict[str, Any]:
         """Get a specific category by ID."""
-        return await self.get(f"/api/organizers/categories/{category_id}")
+        return await self.get(f"/api/organizers/categories/{path_param(category_id)}")
 
     async def create_category(self, category_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new category."""
@@ -492,11 +529,11 @@ class MealieClient:
 
     async def update_category(self, category_id: str, category_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update an existing category."""
-        return await self.put(f"/api/organizers/categories/{category_id}", category_data)
+        return await self.put(f"/api/organizers/categories/{path_param(category_id)}", category_data)
 
     async def delete_category(self, category_id: str) -> Dict[str, Any]:
         """Delete a category."""
-        return await self.delete(f"/api/organizers/categories/{category_id}")
+        return await self.delete(f"/api/organizers/categories/{path_param(category_id)}")
 
     async def close(self):
         """Close the HTTP client."""

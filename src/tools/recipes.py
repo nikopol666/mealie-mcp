@@ -14,7 +14,7 @@ from typing import Dict, Any, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
-from mealie_client import MealieClient, MealieAPIError
+from mealie_client import MealieClient, MealieAPIError, path_param
 
 logger = logging.getLogger(__name__)
 
@@ -237,7 +237,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            response = await client.patch(f"/api/recipes/{recipe_id}", recipe_data)
+            response = await client.patch(f"/api/recipes/{path_param(recipe_id)}", recipe_data)
             return {"recipe": response, "message": "Recipe patched successfully"}
         except Exception as e:
             logger.error(f"Patch recipe failed: {e}")
@@ -281,7 +281,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            await client.delete(f"/api/recipes/{recipe_id}/image")
+            await client.delete(f"/api/recipes/{path_param(recipe_id)}/image")
             return {"message": f"Recipe image deleted successfully for {recipe_id}"}
         except Exception as e:
             logger.error(f"Delete recipe image failed: {e}")
@@ -440,7 +440,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            response = await client.post(f"/api/recipes/{recipe_id}/duplicate", duplicate_data or {})
+            response = await client.post(f"/api/recipes/{path_param(recipe_id)}/duplicate", duplicate_data or {})
             return {"recipe": response, "message": "Recipe duplicated successfully"}
         except Exception as e:
             logger.error(f"Duplicate recipe failed: {e}")
@@ -454,7 +454,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            response = await client.patch(f"/api/recipes/{recipe_id}/last-made", {"timestamp": timestamp})
+            response = await client.patch(f"/api/recipes/{path_param(recipe_id)}/last-made", {"timestamp": timestamp})
             return {"recipe": response, "message": "Recipe last-made timestamp updated successfully"}
         except Exception as e:
             logger.error(f"Update recipe last-made failed: {e}")
@@ -497,7 +497,7 @@ def setup_recipe_tools(mcp_server, client_provider):
                 return {"error": "Mealie client not initialized"}
 
             response = await client.post(
-                f"/api/recipes/{recipe_id}/image",
+                f"/api/recipes/{path_param(recipe_id)}/image",
                 {"url": url, "includeTags": include_tags, "includeCategories": include_categories},
             )
             return {"image": response, "message": "Recipe image scraped successfully"}
@@ -523,7 +523,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             clean_extension = extension.lower().lstrip(".")
             file_name = filename or f"{name}.{clean_extension}"
             response = await client.post_multipart(
-                f"/api/recipes/{recipe_id}/assets",
+                f"/api/recipes/{path_param(recipe_id)}/assets",
                 data={"name": name, "icon": icon, "extension": clean_extension},
                 files={"file": (file_name, _decode_base64_file(file_base64), _guess_content_type(file_name))},
             )
@@ -638,7 +638,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            content = await client.get_raw(f"/api/recipes/bulk-actions/export/{export_id}/download")
+            content = await client.get_raw(f"/api/recipes/bulk-actions/export/{path_param(export_id)}/download")
             return {"download": content}
         except Exception as e:
             logger.error(f"Download recipe export failed: {e}")
@@ -666,7 +666,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            content = await client.get_raw(f"/api/recipes/{recipe_id}/exports", params={"template_name": template_name})
+            content = await client.get_raw(f"/api/recipes/{path_param(recipe_id)}/exports", params={"template_name": template_name})
             return {"download": content}
         except Exception as e:
             logger.error(f"Export recipe failed: {e}")
@@ -680,7 +680,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            response = await client.get(f"/api/recipes/shared/{token_id}")
+            response = await client.get(f"/api/recipes/shared/{path_param(token_id)}")
             return {"recipe": response}
         except Exception as e:
             logger.error(f"Get shared recipe failed: {e}")
@@ -694,7 +694,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            content = await client.get_raw(f"/api/recipes/shared/{token_id}/zip")
+            content = await client.get_raw(f"/api/recipes/shared/{path_param(token_id)}/zip")
             return {"download": content}
         except Exception as e:
             logger.error(f"Download shared recipe ZIP failed: {e}")
@@ -708,7 +708,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            response = await client.get(f"/api/recipes/{recipe_id}/comments")
+            response = await client.get(f"/api/recipes/{path_param(recipe_id)}/comments")
             if isinstance(response, dict):
                 return {"comments": response.get("items", response)}
             return {"comments": response}
@@ -757,7 +757,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            response = await client.get(f"/api/recipes/timeline/events/{event_id}")
+            response = await client.get(f"/api/recipes/timeline/events/{path_param(event_id)}")
             return {"event": response}
         except Exception as e:
             logger.error(f"Get recipe timeline event failed: {e}")
@@ -771,7 +771,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            response = await client.put(f"/api/recipes/timeline/events/{event_id}", _normalize_timeline_event_payload(event_data))
+            response = await client.put(f"/api/recipes/timeline/events/{path_param(event_id)}", _normalize_timeline_event_payload(event_data))
             return {"event": response, "message": "Recipe timeline event updated successfully"}
         except Exception as e:
             logger.error(f"Update recipe timeline event failed: {e}")
@@ -785,7 +785,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            await client.delete(f"/api/recipes/timeline/events/{event_id}")
+            await client.delete(f"/api/recipes/timeline/events/{path_param(event_id)}")
             return {"message": f"Recipe timeline event {event_id} deleted successfully"}
         except Exception as e:
             logger.error(f"Delete recipe timeline event failed: {e}")
@@ -802,7 +802,7 @@ def setup_recipe_tools(mcp_server, client_provider):
             clean_extension = extension.lower().lstrip(".")
             filename = f"timeline-event-image.{clean_extension}"
             response = await client.put_multipart(
-                f"/api/recipes/timeline/events/{event_id}/image",
+                f"/api/recipes/timeline/events/{path_param(event_id)}/image",
                 data={"extension": clean_extension},
                 files={"image": (filename, _decode_base64_file(image_base64), _guess_content_type(filename))},
             )
@@ -873,7 +873,7 @@ async def _async_search_recipes(filters: RecipeSearchFilters, client: MealieClie
 async def _async_get_recipe(recipe_id: str, client: MealieClient) -> Dict[str, Any]:
     """Internal async get recipe function."""
     try:
-        recipe = await client.get(f"/api/recipes/{recipe_id}")
+        recipe = await client.get(f"/api/recipes/{path_param(recipe_id)}")
         return {"recipe": recipe}
     except MealieAPIError as e:
         if "not found" in str(e).lower():
@@ -901,7 +901,7 @@ async def _async_create_recipe(recipe_data: Dict[str, Any], client: MealieClient
                     "recipe": response,
                     "warning": "Recipe was created, but the response did not include a slug for applying full recipe data.",
                 }
-            response = await client.patch(f"/api/recipes/{recipe_slug}", recipe_data)
+            response = await client.patch(f"/api/recipes/{path_param(recipe_slug)}", recipe_data)
         return {"recipe": response, "message": "Recipe created successfully"}
     except MealieAPIError as e:
         return {"error": f"API error: {e}"}
@@ -918,7 +918,7 @@ async def _async_update_recipe(recipe_id: str, recipe_data: Dict[str, Any], clie
         if errors:
             return {"error": "Validation failed", "errors": errors}
         
-        response = await client.put(f"/api/recipes/{recipe_id}", recipe_data)
+        response = await client.put(f"/api/recipes/{path_param(recipe_id)}", recipe_data)
         return {"recipe": response, "message": "Recipe updated successfully"}
     except MealieAPIError as e:
         if "not found" in str(e).lower():
@@ -978,7 +978,7 @@ async def _async_upload_recipe_image(
 async def _async_delete_recipe(recipe_id: str, client: MealieClient) -> Dict[str, Any]:
     """Internal async delete recipe function."""
     try:
-        await client.delete(f"/api/recipes/{recipe_id}")
+        await client.delete(f"/api/recipes/{path_param(recipe_id)}")
         return {"message": f"Recipe {recipe_id} deleted successfully"}
     except MealieAPIError as e:
         if "not found" in str(e).lower():
@@ -1024,7 +1024,7 @@ async def _async_get_random_recipe(client: MealieClient) -> Dict[str, Any]:
         if not slug:
             return {"recipe": selected}
 
-        recipe = await client.get(f"/api/recipes/{slug}")
+        recipe = await client.get(f"/api/recipes/{path_param(slug)}")
         return {"recipe": recipe}
     except MealieAPIError as e:
         return {"error": f"API error: {e}"}

@@ -101,7 +101,9 @@ async def initialize_client():
 async def http_health_check(request: Request) -> JSONResponse:
     """HTTP health endpoint for Docker and Portainer."""
     try:
-        about_info = await mealie_client.get("/api/app/about") if mealie_client else {}
+        if mealie_client is None:
+            raise RuntimeError("Mealie client not initialized")
+        about_info = await mealie_client.get("/api/app/about")
         return JSONResponse({
             "status": "healthy",
             "message": "MCP server is running and connected to Mealie",
@@ -127,7 +129,7 @@ async def http_health_check(request: Request) -> JSONResponse:
                 "transport": "streamable-http",
                 "endpoint": "/mcp"
             }
-        })
+        }, status_code=503)
 
 
 @mcp.tool()

@@ -99,6 +99,8 @@ Host health endpoint:
 curl -fsS http://localhost:8080/health
 ```
 
+The endpoint returns HTTP 200 when Mealie answers and HTTP 503 with `"status": "degraded"` when the Mealie check fails, so the container healthcheck turns unhealthy while Mealie is unreachable.
+
 Expected healthy shape:
 
 ```json

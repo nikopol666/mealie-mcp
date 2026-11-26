@@ -36,14 +36,23 @@ def test_http_health_route_is_registered_before_server_start():
     assert main.mcp.settings.streamable_http_path == "/mcp"
 
 
-def test_http_health_route_stays_up_when_mealie_is_temporarily_down(monkeypatch):
+def test_http_health_route_reports_503_when_mealie_is_down(monkeypatch):
     mock_client = AsyncMock()
     mock_client.get.side_effect = MealieAPIError("temporary failure")
     monkeypatch.setattr(main, "mealie_client", mock_client)
 
     response = main.asyncio.run(main.http_health_check(None))
 
-    assert response.status_code == 200
+    assert response.status_code == 503
+    assert '"status":"degraded"' in response.body.decode()
+
+
+def test_http_health_route_reports_503_without_client(monkeypatch):
+    monkeypatch.setattr(main, "mealie_client", None)
+
+    response = main.asyncio.run(main.http_health_check(None))
+
+    assert response.status_code == 503
     assert '"status":"degraded"' in response.body.decode()
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from mealie_client import MealieAPIError
+from mealie_client import MealieAPIError, path_param
 
 
 def setup_comments_sharing_tools(mcp_server, client_provider):
@@ -22,7 +22,7 @@ def setup_comments_sharing_tools(mcp_server, client_provider):
     async def get_comment(comment_id: str) -> Dict[str, Any]:
         """Get one comment by ID."""
         try:
-            return {"comment": await client_provider().get(f"/api/comments/{comment_id}")}
+            return {"comment": await client_provider().get(f"/api/comments/{path_param(comment_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -38,7 +38,7 @@ def setup_comments_sharing_tools(mcp_server, client_provider):
     async def update_comment(comment_id: str, comment_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one comment by ID."""
         try:
-            return {"comment": await client_provider().put(f"/api/comments/{comment_id}", comment_data)}
+            return {"comment": await client_provider().put(f"/api/comments/{path_param(comment_id)}", comment_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -46,7 +46,7 @@ def setup_comments_sharing_tools(mcp_server, client_provider):
     async def delete_comment(comment_id: str) -> Dict[str, Any]:
         """Delete one comment by ID."""
         try:
-            await client_provider().delete(f"/api/comments/{comment_id}")
+            await client_provider().delete(f"/api/comments/{path_param(comment_id)}")
             return {"message": "Comment deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -71,7 +71,7 @@ def setup_comments_sharing_tools(mcp_server, client_provider):
     async def get_shared_recipe_record(shared_recipe_id: str) -> Dict[str, Any]:
         """Get one shared recipe record by ID."""
         try:
-            return {"shared_recipe": await client_provider().get(f"/api/shared/recipes/{shared_recipe_id}")}
+            return {"shared_recipe": await client_provider().get(f"/api/shared/recipes/{path_param(shared_recipe_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -79,7 +79,7 @@ def setup_comments_sharing_tools(mcp_server, client_provider):
     async def delete_shared_recipe_record(shared_recipe_id: str) -> Dict[str, Any]:
         """Delete one shared recipe record by ID."""
         try:
-            await client_provider().delete(f"/api/shared/recipes/{shared_recipe_id}")
+            await client_provider().delete(f"/api/shared/recipes/{path_param(shared_recipe_id)}")
             return {"message": "Shared recipe record deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}

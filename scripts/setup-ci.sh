@@ -76,7 +76,7 @@ if command -v python3 &> /dev/null; then
     if python3 -c "
 import sys
 try:
-    import fastapi, uvicorn, mcp, httpx, pydantic
+    import mcp, httpx, pydantic, pydantic_settings, starlette, uvicorn
     print('  ✅ All dependencies available')
 except ImportError as e:
     print(f'  ⚠️  Missing dependency: {e}')

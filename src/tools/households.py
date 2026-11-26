@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from mealie_client import MealieAPIError
+from mealie_client import MealieAPIError, path_param
 
 
 def setup_household_tools(mcp_server, client_provider):
@@ -62,7 +62,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def get_household_recipe_details(recipe_slug: str) -> Dict[str, Any]:
         """Get household-specific details for one recipe."""
         try:
-            return {"recipe": await client_provider().get(f"/api/households/self/recipes/{recipe_slug}")}
+            return {"recipe": await client_provider().get(f"/api/households/self/recipes/{path_param(recipe_slug)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -78,7 +78,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def get_cookbook(cookbook_id: str) -> Dict[str, Any]:
         """Get one household cookbook by ID."""
         try:
-            return {"cookbook": await client_provider().get(f"/api/households/cookbooks/{cookbook_id}")}
+            return {"cookbook": await client_provider().get(f"/api/households/cookbooks/{path_param(cookbook_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -94,7 +94,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def update_cookbook(cookbook_id: str, cookbook_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one household cookbook by ID."""
         try:
-            return {"cookbook": await client_provider().put(f"/api/households/cookbooks/{cookbook_id}", cookbook_data)}
+            return {"cookbook": await client_provider().put(f"/api/households/cookbooks/{path_param(cookbook_id)}", cookbook_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -110,7 +110,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def delete_cookbook(cookbook_id: str) -> Dict[str, Any]:
         """Delete one household cookbook by ID."""
         try:
-            await client_provider().delete(f"/api/households/cookbooks/{cookbook_id}")
+            await client_provider().delete(f"/api/households/cookbooks/{path_param(cookbook_id)}")
             return {"message": "Cookbook deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -151,7 +151,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def get_household_notification(notification_id: str) -> Dict[str, Any]:
         """Get one household event notification by ID."""
         try:
-            return {"notification": await client_provider().get(f"/api/households/events/notifications/{notification_id}")}
+            return {"notification": await client_provider().get(f"/api/households/events/notifications/{path_param(notification_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -167,7 +167,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def update_household_notification(notification_id: str, notification_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one household event notification by ID."""
         try:
-            endpoint = f"/api/households/events/notifications/{notification_id}"
+            endpoint = f"/api/households/events/notifications/{path_param(notification_id)}"
             return {"notification": await client_provider().put(endpoint, notification_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -176,7 +176,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def delete_household_notification(notification_id: str) -> Dict[str, Any]:
         """Delete one household event notification by ID."""
         try:
-            await client_provider().delete(f"/api/households/events/notifications/{notification_id}")
+            await client_provider().delete(f"/api/households/events/notifications/{path_param(notification_id)}")
             return {"message": "Household notification deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -185,7 +185,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def test_household_notification(notification_id: str) -> Dict[str, Any]:
         """Trigger a test for one household event notification."""
         try:
-            endpoint = f"/api/households/events/notifications/{notification_id}/test"
+            endpoint = f"/api/households/events/notifications/{path_param(notification_id)}/test"
             return {"result": await client_provider().post(endpoint, {})}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -202,7 +202,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def get_recipe_action(action_id: str) -> Dict[str, Any]:
         """Get one household recipe action by ID."""
         try:
-            return {"recipe_action": await client_provider().get(f"/api/households/recipe-actions/{action_id}")}
+            return {"recipe_action": await client_provider().get(f"/api/households/recipe-actions/{path_param(action_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -218,7 +218,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def update_recipe_action(action_id: str, action_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one household recipe action by ID."""
         try:
-            return {"recipe_action": await client_provider().put(f"/api/households/recipe-actions/{action_id}", action_data)}
+            return {"recipe_action": await client_provider().put(f"/api/households/recipe-actions/{path_param(action_id)}", action_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -226,7 +226,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def delete_recipe_action(action_id: str) -> Dict[str, Any]:
         """Delete one household recipe action by ID."""
         try:
-            await client_provider().delete(f"/api/households/recipe-actions/{action_id}")
+            await client_provider().delete(f"/api/households/recipe-actions/{path_param(action_id)}")
             return {"message": "Recipe action deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -235,7 +235,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def trigger_recipe_action(action_id: str, recipe_slug: str) -> Dict[str, Any]:
         """Trigger one household recipe action for a recipe slug."""
         try:
-            endpoint = f"/api/households/recipe-actions/{action_id}/trigger/{recipe_slug}"
+            endpoint = f"/api/households/recipe-actions/{path_param(action_id)}/trigger/{path_param(recipe_slug)}"
             return {"result": await client_provider().post(endpoint, {})}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -252,7 +252,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def get_household_webhook(webhook_id: str) -> Dict[str, Any]:
         """Get one household webhook by ID."""
         try:
-            return {"webhook": await client_provider().get(f"/api/households/webhooks/{webhook_id}")}
+            return {"webhook": await client_provider().get(f"/api/households/webhooks/{path_param(webhook_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -268,7 +268,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def update_household_webhook(webhook_id: str, webhook_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one household webhook by ID."""
         try:
-            return {"webhook": await client_provider().put(f"/api/households/webhooks/{webhook_id}", webhook_data)}
+            return {"webhook": await client_provider().put(f"/api/households/webhooks/{path_param(webhook_id)}", webhook_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -276,7 +276,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def delete_household_webhook(webhook_id: str) -> Dict[str, Any]:
         """Delete one household webhook by ID."""
         try:
-            await client_provider().delete(f"/api/households/webhooks/{webhook_id}")
+            await client_provider().delete(f"/api/households/webhooks/{path_param(webhook_id)}")
             return {"message": "Household webhook deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -285,7 +285,7 @@ def setup_household_tools(mcp_server, client_provider):
     async def test_household_webhook(webhook_id: str) -> Dict[str, Any]:
         """Trigger a test for one household webhook."""
         try:
-            return {"result": await client_provider().post(f"/api/households/webhooks/{webhook_id}/test", {})}
+            return {"result": await client_provider().post(f"/api/households/webhooks/{path_param(webhook_id)}/test", {})}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
