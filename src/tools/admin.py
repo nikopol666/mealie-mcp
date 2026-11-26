@@ -9,7 +9,7 @@ import base64
 import binascii
 from typing import Any, Dict, Optional
 
-from mealie_client import MealieAPIError
+from mealie_client import MealieAPIError, path_param
 
 
 def _decode_base64(encoded: str) -> bytes:
@@ -68,7 +68,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def download_admin_backup(file_name: str) -> Dict[str, Any]:
         """Download one admin backup as base64-safe data."""
         try:
-            return await client_provider().get_raw(f"/api/admin/backups/{file_name}")
+            return await client_provider().get_raw(f"/api/admin/backups/{path_param(file_name)}")
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -91,7 +91,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def delete_admin_backup(file_name: str) -> Dict[str, Any]:
         """Delete one admin backup by file name."""
         try:
-            await client_provider().delete(f"/api/admin/backups/{file_name}")
+            await client_provider().delete(f"/api/admin/backups/{path_param(file_name)}")
             return {"message": "Admin backup deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -100,7 +100,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def restore_admin_backup(file_name: str, restore_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Restore one admin backup by file name."""
         try:
-            endpoint = f"/api/admin/backups/{file_name}/restore"
+            endpoint = f"/api/admin/backups/{path_param(file_name)}/restore"
             return {"result": await client_provider().post(endpoint, restore_data or {})}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -141,7 +141,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def get_admin_group(group_id: str) -> Dict[str, Any]:
         """Get one admin-visible group by ID."""
         try:
-            return {"group": await client_provider().get(f"/api/admin/groups/{group_id}")}
+            return {"group": await client_provider().get(f"/api/admin/groups/{path_param(group_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -157,7 +157,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def update_admin_group(group_id: str, group_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one admin-visible group by ID."""
         try:
-            return {"group": await client_provider().put(f"/api/admin/groups/{group_id}", group_data)}
+            return {"group": await client_provider().put(f"/api/admin/groups/{path_param(group_id)}", group_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -165,7 +165,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def delete_admin_group(group_id: str) -> Dict[str, Any]:
         """Delete one admin-visible group by ID."""
         try:
-            await client_provider().delete(f"/api/admin/groups/{group_id}")
+            await client_provider().delete(f"/api/admin/groups/{path_param(group_id)}")
             return {"message": "Admin group deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -182,7 +182,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def get_admin_household(household_id: str) -> Dict[str, Any]:
         """Get one admin-visible household by ID."""
         try:
-            return {"household": await client_provider().get(f"/api/admin/households/{household_id}")}
+            return {"household": await client_provider().get(f"/api/admin/households/{path_param(household_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -198,7 +198,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def update_admin_household(household_id: str, household_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one admin-visible household by ID."""
         try:
-            return {"household": await client_provider().put(f"/api/admin/households/{household_id}", household_data)}
+            return {"household": await client_provider().put(f"/api/admin/households/{path_param(household_id)}", household_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -206,7 +206,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def delete_admin_household(household_id: str) -> Dict[str, Any]:
         """Delete one admin-visible household by ID."""
         try:
-            await client_provider().delete(f"/api/admin/households/{household_id}")
+            await client_provider().delete(f"/api/admin/households/{path_param(household_id)}")
             return {"message": "Admin household deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -223,7 +223,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def get_admin_user(user_id: str) -> Dict[str, Any]:
         """Get one admin-visible user by ID."""
         try:
-            return {"user": await client_provider().get(f"/api/admin/users/{user_id}")}
+            return {"user": await client_provider().get(f"/api/admin/users/{path_param(user_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -239,7 +239,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def update_admin_user(user_id: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one admin-visible user by ID."""
         try:
-            return {"user": await client_provider().put(f"/api/admin/users/{user_id}", user_data)}
+            return {"user": await client_provider().put(f"/api/admin/users/{path_param(user_id)}", user_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -247,7 +247,7 @@ def setup_admin_tools(mcp_server, client_provider):
     async def delete_admin_user(user_id: str) -> Dict[str, Any]:
         """Delete one admin-visible user by ID."""
         try:
-            await client_provider().delete(f"/api/admin/users/{user_id}")
+            await client_provider().delete(f"/api/admin/users/{path_param(user_id)}")
             return {"message": "Admin user deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}

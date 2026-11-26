@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 
-from mealie_client import MealieAPIError
+from mealie_client import MealieAPIError, path_param
 
 
 def setup_platform_tools(mcp_server, client_provider):
@@ -70,7 +70,7 @@ def setup_platform_tools(mcp_server, client_provider):
     async def get_recipe_asset_media(recipe_id: str, file_name: str) -> Dict[str, Any]:
         """Download a recipe asset file as base64-safe data."""
         try:
-            return await client_provider().get_raw(f"/api/media/recipes/{recipe_id}/assets/{file_name}")
+            return await client_provider().get_raw(f"/api/media/recipes/{path_param(recipe_id)}/assets/{path_param(file_name)}")
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -78,7 +78,7 @@ def setup_platform_tools(mcp_server, client_provider):
     async def get_recipe_image_media(recipe_id: str, file_name: str) -> Dict[str, Any]:
         """Download a recipe image file as base64-safe data."""
         try:
-            return await client_provider().get_raw(f"/api/media/recipes/{recipe_id}/images/{file_name}")
+            return await client_provider().get_raw(f"/api/media/recipes/{path_param(recipe_id)}/images/{path_param(file_name)}")
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -86,7 +86,7 @@ def setup_platform_tools(mcp_server, client_provider):
     async def get_recipe_timeline_image_media(recipe_id: str, timeline_event_id: str, file_name: str) -> Dict[str, Any]:
         """Download a recipe timeline image file as base64-safe data."""
         try:
-            endpoint = f"/api/media/recipes/{recipe_id}/images/timeline/{timeline_event_id}/{file_name}"
+            endpoint = f"/api/media/recipes/{path_param(recipe_id)}/images/timeline/{path_param(timeline_event_id)}/{path_param(file_name)}"
             return await client_provider().get_raw(endpoint)
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -95,6 +95,6 @@ def setup_platform_tools(mcp_server, client_provider):
     async def get_user_image_media(user_id: str, file_name: str) -> Dict[str, Any]:
         """Download a user image file as base64-safe data."""
         try:
-            return await client_provider().get_raw(f"/api/media/users/{user_id}/{file_name}")
+            return await client_provider().get_raw(f"/api/media/users/{path_param(user_id)}/{path_param(file_name)}")
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}

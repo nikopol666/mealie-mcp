@@ -4,6 +4,21 @@ All notable changes to Mealie MCP Server are documented here.
 
 This project follows semantic versioning.
 
+## 1.0.2 - unreleased
+
+- Pinned `mcp` to `>=1.8,<2` (mcp 2.x removed `mcp.server.fastmcp`, which broke CI) and capped the other runtime dependencies at their next major version.
+- Removed unused `fastapi` and `uvicorn[standard]` requirements; `uvicorn` and `starlette` still come in through `mcp`.
+- Escaped every caller-supplied URL path segment (`path_param`) and rejected `.`/`..` segments, so IDs such as `../admin/users` can no longer reach other Mealie endpoints.
+- Non-JSON Mealie responses now raise `MealieAPIError` instead of an unhandled `JSONDecodeError`.
+- `/health` returns HTTP 503 when the Mealie check fails (`status: degraded`).
+- Dropped `gcc`/`g++` from the Docker builder stage; all dependencies install from wheels.
+- Recipe image upload resolves UUID references to the recipe slug (regression test added).
+
+## 1.0.1
+
+- Accept plain list responses from the meal-plan endpoints.
+- Publish the `latest` image tag only from official release tags.
+
 ## 1.0.0 - 2026-05-06
 
 - Added broad Mealie v3 recipe edit coverage, including patch/update, images, assets, imports, exports, comments, timeline events, and bulk recipe operations.

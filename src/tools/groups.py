@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from mealie_client import MealieAPIError
+from mealie_client import MealieAPIError, path_param
 
 
 def setup_group_tools(mcp_server, client_provider):
@@ -30,7 +30,7 @@ def setup_group_tools(mcp_server, client_provider):
     async def get_group_household(household_slug: str) -> Dict[str, Any]:
         """Get one group household by slug."""
         try:
-            return {"household": await client_provider().get(f"/api/groups/households/{household_slug}")}
+            return {"household": await client_provider().get(f"/api/groups/households/{path_param(household_slug)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -46,7 +46,7 @@ def setup_group_tools(mcp_server, client_provider):
     async def get_group_member(username_or_id: str) -> Dict[str, Any]:
         """Get one group member by username or ID."""
         try:
-            return {"member": await client_provider().get(f"/api/groups/members/{username_or_id}")}
+            return {"member": await client_provider().get(f"/api/groups/members/{path_param(username_or_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -86,7 +86,7 @@ def setup_group_tools(mcp_server, client_provider):
     async def get_group_label(label_id: str) -> Dict[str, Any]:
         """Get one group label by ID."""
         try:
-            return {"label": await client_provider().get(f"/api/groups/labels/{label_id}")}
+            return {"label": await client_provider().get(f"/api/groups/labels/{path_param(label_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -102,7 +102,7 @@ def setup_group_tools(mcp_server, client_provider):
     async def update_group_label(label_id: str, label_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one group label by ID."""
         try:
-            return {"label": await client_provider().put(f"/api/groups/labels/{label_id}", label_data)}
+            return {"label": await client_provider().put(f"/api/groups/labels/{path_param(label_id)}", label_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -110,7 +110,7 @@ def setup_group_tools(mcp_server, client_provider):
     async def delete_group_label(label_id: str) -> Dict[str, Any]:
         """Delete one group label by ID."""
         try:
-            await client_provider().delete(f"/api/groups/labels/{label_id}")
+            await client_provider().delete(f"/api/groups/labels/{path_param(label_id)}")
             return {"message": "Group label deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -127,7 +127,7 @@ def setup_group_tools(mcp_server, client_provider):
     async def get_group_report(report_id: str) -> Dict[str, Any]:
         """Get one group report by ID."""
         try:
-            return {"report": await client_provider().get(f"/api/groups/reports/{report_id}")}
+            return {"report": await client_provider().get(f"/api/groups/reports/{path_param(report_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -135,7 +135,7 @@ def setup_group_tools(mcp_server, client_provider):
     async def delete_group_report(report_id: str) -> Dict[str, Any]:
         """Delete one group report by ID."""
         try:
-            await client_provider().delete(f"/api/groups/reports/{report_id}")
+            await client_provider().delete(f"/api/groups/reports/{path_param(report_id)}")
             return {"message": "Group report deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}

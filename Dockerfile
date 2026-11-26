@@ -4,13 +4,8 @@ FROM python:3.12-slim AS builder
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for building
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy requirements and install Python dependencies
+# Copy requirements and install Python dependencies (all available as wheels,
+# so no compiler toolchain is needed)
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 

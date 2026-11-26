@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from mealie_client import MealieAPIError
+from mealie_client import MealieAPIError, path_param
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ def setup_shopping_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            shopping_list = await client.get(f"/api/households/shopping/lists/{list_id}")
+            shopping_list = await client.get(f"/api/households/shopping/lists/{path_param(list_id)}")
             return {"shopping_list": shopping_list}
         except Exception as e:
             logger.error(f"Get shopping list failed: {e}")
@@ -177,13 +177,13 @@ def setup_shopping_tools(mcp_server, client_provider):
                 return {"error": "Mealie client not initialized"}
 
             updates = _model_payload(ShoppingListUpdate(**list_data))
-            current = await client.get(f"/api/households/shopping/lists/{list_id}")
+            current = await client.get(f"/api/households/shopping/lists/{path_param(list_id)}")
             payload = _merge_resource_update(
                 current,
                 updates,
                 ["id", "groupId", "userId", "name", "extras", "listItems"],
             )
-            response = await client.put(f"/api/households/shopping/lists/{list_id}", payload)
+            response = await client.put(f"/api/households/shopping/lists/{path_param(list_id)}", payload)
             return {"shopping_list": response, "message": "Shopping list updated successfully"}
         except Exception as e:
             logger.error(f"Update shopping list failed: {e}")
@@ -197,7 +197,7 @@ def setup_shopping_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            await client.delete(f"/api/households/shopping/lists/{list_id}")
+            await client.delete(f"/api/households/shopping/lists/{path_param(list_id)}")
             return {"message": f"Shopping list {list_id} deleted successfully"}
         except Exception as e:
             logger.error(f"Delete shopping list failed: {e}")
@@ -230,7 +230,7 @@ def setup_shopping_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            item = await client.get(f"/api/households/shopping/items/{item_id}")
+            item = await client.get(f"/api/households/shopping/items/{path_param(item_id)}")
             return {"item": item}
         except Exception as e:
             logger.error(f"Get shopping item failed: {e}")
@@ -294,7 +294,7 @@ def setup_shopping_tools(mcp_server, client_provider):
                 return {"error": "Mealie client not initialized"}
 
             updates = _normalize_item_payload(item_data)
-            current = await client.get(f"/api/households/shopping/items/{item_id}")
+            current = await client.get(f"/api/households/shopping/items/{path_param(item_id)}")
             payload = _merge_resource_update(
                 current,
                 updates,
@@ -315,7 +315,7 @@ def setup_shopping_tools(mcp_server, client_provider):
                     "recipeReferences",
                 ],
             )
-            response = await client.put(f"/api/households/shopping/items/{item_id}", payload)
+            response = await client.put(f"/api/households/shopping/items/{path_param(item_id)}", payload)
             return {"item": response, "message": "Shopping item updated successfully"}
         except Exception as e:
             logger.error(f"Update shopping item failed: {e}")
@@ -344,7 +344,7 @@ def setup_shopping_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            await client.delete(f"/api/households/shopping/items/{item_id}")
+            await client.delete(f"/api/households/shopping/items/{path_param(item_id)}")
             return {"message": f"Shopping item {item_id} deleted successfully"}
         except Exception as e:
             logger.error(f"Delete shopping item failed: {e}")
@@ -378,7 +378,7 @@ def setup_shopping_tools(mcp_server, client_provider):
 
             payload = _normalize_recipe_options(options)
             response = await client.post(
-                f"/api/households/shopping/lists/{list_id}/recipe/{recipe_id}",
+                f"/api/households/shopping/lists/{path_param(list_id)}/recipe/{path_param(recipe_id)}",
                 payload,
             )
             return {"result": response, "message": "Recipe ingredients added to shopping list"}
@@ -401,7 +401,7 @@ def setup_shopping_tools(mcp_server, client_provider):
                     normalized["recipeId"] = recipe["recipe_id"]
                 payload.append(normalized)
 
-            response = await client.post(f"/api/households/shopping/lists/{list_id}/recipe", payload)
+            response = await client.post(f"/api/households/shopping/lists/{path_param(list_id)}/recipe", payload)
             return {"result": response, "message": "Recipe ingredients added to shopping list"}
         except Exception as e:
             logger.error(f"Add recipes to shopping list failed: {e}")
@@ -421,7 +421,7 @@ def setup_shopping_tools(mcp_server, client_provider):
 
             payload = _normalize_recipe_options(options)
             response = await client.post(
-                f"/api/households/shopping/lists/{list_id}/recipe/{recipe_id}/delete",
+                f"/api/households/shopping/lists/{path_param(list_id)}/recipe/{path_param(recipe_id)}/delete",
                 payload,
             )
             return {"result": response, "message": "Recipe ingredients removed from shopping list"}
@@ -441,7 +441,7 @@ def setup_shopping_tools(mcp_server, client_provider):
                 return {"error": "Mealie client not initialized"}
 
             response = await client.put(
-                f"/api/households/shopping/lists/{list_id}/label-settings",
+                f"/api/households/shopping/lists/{path_param(list_id)}/label-settings",
                 label_settings,
             )
             return {"label_settings": response, "message": "Shopping list label settings updated"}

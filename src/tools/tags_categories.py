@@ -13,7 +13,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
-from mealie_client import MealieClient, MealieAPIError
+from mealie_client import MealieClient, MealieAPIError, path_param
 
 logger = logging.getLogger(__name__)
 
@@ -207,7 +207,7 @@ def setup_tag_category_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            tag = await client.get(f"/api/organizers/tags/slug/{tag_slug}")
+            tag = await client.get(f"/api/organizers/tags/slug/{path_param(tag_slug)}")
             return {"tag": tag}
         except Exception as e:
             logger.error(f"Get tag by slug failed: {e}")
@@ -331,7 +331,7 @@ def setup_tag_category_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            category = await client.get(f"/api/organizers/categories/slug/{category_slug}")
+            category = await client.get(f"/api/organizers/categories/slug/{path_param(category_slug)}")
             return {"category": category}
         except Exception as e:
             logger.error(f"Get category by slug failed: {e}")
@@ -380,7 +380,7 @@ def setup_tag_category_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            tool = await client.get(f"/api/organizers/tools/{tool_id}")
+            tool = await client.get(f"/api/organizers/tools/{path_param(tool_id)}")
             return {"tool": tool}
         except Exception as e:
             logger.error(f"Get recipe tool failed: {e}")
@@ -394,7 +394,7 @@ def setup_tag_category_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            tool = await client.get(f"/api/organizers/tools/slug/{tool_slug}")
+            tool = await client.get(f"/api/organizers/tools/slug/{path_param(tool_slug)}")
             return {"tool": tool}
         except Exception as e:
             logger.error(f"Get recipe tool by slug failed: {e}")
@@ -432,7 +432,7 @@ def setup_tag_category_tools(mcp_server, client_provider):
                 "name": tool.name,
                 "householdsWithTool": tool.householdsWithTool or [],
             }
-            response = await client.put(f"/api/organizers/tools/{tool_id}", api_data)
+            response = await client.put(f"/api/organizers/tools/{path_param(tool_id)}", api_data)
             return {"tool": response, "message": "Recipe tool updated successfully"}
         except Exception as e:
             logger.error(f"Update recipe tool failed: {e}")
@@ -446,7 +446,7 @@ def setup_tag_category_tools(mcp_server, client_provider):
             if not client:
                 return {"error": "Mealie client not initialized"}
 
-            await client.delete(f"/api/organizers/tools/{tool_id}")
+            await client.delete(f"/api/organizers/tools/{path_param(tool_id)}")
             return {"message": f"Recipe tool {tool_id} deleted successfully"}
         except Exception as e:
             logger.error(f"Delete recipe tool failed: {e}")

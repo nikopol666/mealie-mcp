@@ -6,7 +6,7 @@ import base64
 import binascii
 from typing import Any, Dict, Optional
 
-from mealie_client import MealieAPIError
+from mealie_client import MealieAPIError, path_param
 
 
 def _decode_base64(encoded: str) -> bytes:
@@ -33,7 +33,7 @@ def setup_user_tools(mcp_server, client_provider):
     async def update_user(user_id: str, user_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update one user by ID."""
         try:
-            return {"user": await client_provider().put(f"/api/users/{user_id}", user_data)}
+            return {"user": await client_provider().put(f"/api/users/{path_param(user_id)}", user_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -57,7 +57,7 @@ def setup_user_tools(mcp_server, client_provider):
     async def delete_user_api_token(token_id: str) -> Dict[str, Any]:
         """Delete one Mealie API token by ID."""
         try:
-            await client_provider().delete(f"/api/users/api-tokens/{token_id}")
+            await client_provider().delete(f"/api/users/api-tokens/{path_param(token_id)}")
             return {"message": "User API token deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -74,7 +74,7 @@ def setup_user_tools(mcp_server, client_provider):
     async def list_user_favorites(user_id: str, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """List one user's favorite recipes."""
         try:
-            return {"favorites": await client_provider().get(f"/api/users/{user_id}/favorites", filters or None)}
+            return {"favorites": await client_provider().get(f"/api/users/{path_param(user_id)}/favorites", filters or None)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -82,7 +82,7 @@ def setup_user_tools(mcp_server, client_provider):
     async def add_user_favorite(user_id: str, recipe_slug: str) -> Dict[str, Any]:
         """Add one recipe to a user's favorites."""
         try:
-            return {"favorite": await client_provider().post(f"/api/users/{user_id}/favorites/{recipe_slug}", {})}
+            return {"favorite": await client_provider().post(f"/api/users/{path_param(user_id)}/favorites/{path_param(recipe_slug)}", {})}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -90,7 +90,7 @@ def setup_user_tools(mcp_server, client_provider):
     async def delete_user_favorite(user_id: str, recipe_slug: str) -> Dict[str, Any]:
         """Remove one recipe from a user's favorites."""
         try:
-            await client_provider().delete(f"/api/users/{user_id}/favorites/{recipe_slug}")
+            await client_provider().delete(f"/api/users/{path_param(user_id)}/favorites/{path_param(recipe_slug)}")
             return {"message": "User favorite deleted successfully"}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
@@ -107,7 +107,7 @@ def setup_user_tools(mcp_server, client_provider):
     async def get_self_rating(recipe_id: str) -> Dict[str, Any]:
         """Get the current user's rating for one recipe."""
         try:
-            return {"rating": await client_provider().get(f"/api/users/self/ratings/{recipe_id}")}
+            return {"rating": await client_provider().get(f"/api/users/self/ratings/{path_param(recipe_id)}")}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -115,7 +115,7 @@ def setup_user_tools(mcp_server, client_provider):
     async def list_user_ratings(user_id: str, filters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """List one user's recipe ratings."""
         try:
-            return {"ratings": await client_provider().get(f"/api/users/{user_id}/ratings", filters or None)}
+            return {"ratings": await client_provider().get(f"/api/users/{path_param(user_id)}/ratings", filters or None)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -123,7 +123,7 @@ def setup_user_tools(mcp_server, client_provider):
     async def set_user_rating(user_id: str, recipe_slug: str, rating_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create or update one user's rating for a recipe."""
         try:
-            return {"rating": await client_provider().post(f"/api/users/{user_id}/ratings/{recipe_slug}", rating_data)}
+            return {"rating": await client_provider().post(f"/api/users/{path_param(user_id)}/ratings/{path_param(recipe_slug)}", rating_data)}
         except MealieAPIError as e:
             return {"error": f"API error: {e}"}
 
@@ -135,7 +135,7 @@ def setup_user_tools(mcp_server, client_provider):
             media_type = "image/jpeg" if clean_extension in {"jpg", "jpeg"} else f"image/{clean_extension}"
             image_bytes = _decode_base64(image_base64)
             response = await client_provider().post_multipart(
-                f"/api/users/{user_id}/image",
+                f"/api/users/{path_param(user_id)}/image",
                 data={"extension": clean_extension},
                 files={"image": (f"user-image.{clean_extension}", image_bytes, media_type)},
             )
